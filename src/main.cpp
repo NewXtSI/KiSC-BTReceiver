@@ -9,10 +9,13 @@
 
 #include "AudioTools.h"
 #include "BluetoothA2DPSink.h"
+#include "../KiSC-ESP-Now-Protocol/include/kiscprotov2.h"
 
 I2SStream out;
 BluetoothA2DPSink a2dp_sink(out);
 A2DPSimpleExponentialVolumeControl vc;
+
+KiSCProtoV2Slave kisc("BTAudio");
 
 // I2S Output
 #define I2S_OUT_BCK_PIN     27      // Weiß
@@ -45,7 +48,7 @@ void setup() {
     Serial.setDebugOutput(true);
     DBGINI(&Serial)
     DBGINI(&Serial, ESP32Timestamp::TimestampSinceStart)
-    DBGLEV(Debug)
+    DBGLEV(Verbose)
     DBGSTA
     DBGLOG(Info,    "---------------------------------------------------------------"
                     "---------")
@@ -78,12 +81,18 @@ void setup() {
     a2dp_sink.set_avrc_metadata_callback(avrc_metadata_callback);
 
     a2dp_sink.set_on_connection_state_changed(connection_state_changed);
-    a2dp_sink.set_on_audio_state_changed(audio_state_changed);    
+    a2dp_sink.set_on_audio_state_changed(audio_state_changed);
     a2dp_sink.set_auto_reconnect(true);
 //    a2dp_sink.set_volume_control(&vc);
     a2dp_sink.set_mono_downmix(true);
 //    a2dp_sink.set_volume(100);
     a2dp_sink.start("MyMusic");
+
+    kisc.onNetwork([]() {
+        kisc.dumpNetwork();
+    });
+    kisc.setType(KiSCPeer::SlaveType::BTAudio);
+    kisc.start();
 }
 
 void loop() {
